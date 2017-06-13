@@ -1,14 +1,3 @@
-# Image Factory
-
-This is an extension of the Image Factory found here https://github.com/Azure/azure-devtestlab/tree/master/Scripts.  I used the image factory above as a base and then extended it to have more features.
- 
-## Getting Started
-
-The concept here is to have a Dev Test Lab that creates, distributes and retires images based on a configuration file.
-
-The sample config file shows three different image factory configs:
-
-```
 {
   "Config": [
     {
@@ -89,27 +78,3 @@ The sample config file shows three different image factory configs:
     }
   ]
 }
-```
-
-Each config behaves slightly differently.
-
-The **Base** configuration shows a basic usage where images are created for all template files (*.json) below the "Base" folder.  These images are not distributed to any other labs.
-
-The **WeeklyImage** configuration shows building an image from another image (namely the base image above).  These images are then distributed to a different DevTestLab called **Staging**.
-
-The **Staging** configuration builds a virtual machine based on an existing image (WeeklyImage).  The big difference here is that it is set to not create an image.  This configuration will leave the VM running.  This can be useful for test/staging environments.
-
-### Executing the tasks
-
-The task execution order is:
-
-- StartImageFactory.ps1
-    - Creates the VMs based on the configuration
-- SnapImagesFromVms.ps1
-    - Snaps images of the running VMs
-- DistributeImages.ps1
-    - Distributes the images based on the passed in configuration
-- CleanUpFactory.ps1
-    - Cleans up the factory lab
-- RetireImages.ps1
-    - Retires images based on the retirement settings in the configuration file.
