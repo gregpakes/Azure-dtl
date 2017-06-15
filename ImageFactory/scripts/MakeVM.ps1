@@ -55,6 +55,8 @@ if($existingVms.Count -ne 0){
     $vm = (Get-AzureRmResource -Id $existingVms[0].ResourceId)
     Write-Warning "VM already exists - Continue"
 
+    # We should start the VM
+
     return (New-Object PSObject |
         Add-Member -PassThru NoteProperty VMName $vm.Name |
         Add-Member -PassThru NoteProperty VMResourceId $vm.ResourceId |
@@ -115,7 +117,8 @@ else
 
          #Determine if artifacts succeeded
          Write-Output "Determining artifact status."
- 		$existingVmDetails = Get-AzureRmResource -ResourceType 'Microsoft.DevTestLab/labs/virtualmachines' -Name $existingVm.Name -ResourceGroupName $existingVm.ResourceGroupName
+         $filter = '$expand=Properties($expand=ComputeVm,NetworkInterface,Artifacts)'
+ 		 $existingVmDetails = Get-AzureRmResource -ResourceType 'Microsoft.DevTestLab/labs/virtualmachines' -Name $existingVm.Name -ResourceGroupName $existingVm.ResourceGroupName -ODataQuery $filter
          $existingVmArtStatus = $existingVmDetails.Properties.ArtifactDeploymentStatus
          if ($existingVmArtStatus.totalArtifacts -eq 0 -or $existingVmArtStatus.deploymentStatus -eq "Succeeded")
          {
@@ -134,8 +137,8 @@ else
              Write-Output "Getting resource ID from Existing Vm"
              $vmResourceId = $existingVm.ResourceId 
              Write-Output "Resource ID: $vmResourceId"
- 			$vmFqdn = $existingVmDetails.Properties.fqdn
- 			Write-Output "Resource FQDN: $vmFqdn"
+ 			 $vmFqdn = $existingVmDetails.Properties.fqdn
+ 			 Write-Output "Resource FQDN: $vmFqdn"
              Set-AzureRmResource -ResourceId $vmResourceId -Tag $tags -Force
          }
          else
@@ -145,7 +148,7 @@ else
                  Write-Error ("##[error]Artifact deployment status is: " + $existingVmArtStatus.deploymentStatus)
              }
              Write-Error "##[error]Deploying VM artifacts failed. $vmName from $TemplateFilePath. Failure details follow:"
-             $failedArtifacts = ($vmResource.Properties.Artifacts | Where-Object {$_.status -eq 'failed'})
+             $failedArtifacts = ($existingVmDetails.Properties.Artifacts | Where-Object {$_.status -eq 'failed'})
              if($failedArtifacts -ne $null)
              { 
                  foreach($failedArtifact in $failedArtifacts)
@@ -158,7 +161,7 @@ else
              }
 
              Write-Output "Deleting VM $vmName after failed artifact deployment"
-             Remove-AzureRmResource -ResourceId $existingVm.ResourceId -ApiVersion 2016-05-15 -Force
+             Remove-AzureRmResource -ResourceId $existingVm.ResourceId -ApiVersion "2017-04-26-preview" -Force
          }
      }
      else {
